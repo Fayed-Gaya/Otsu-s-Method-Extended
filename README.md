@@ -1,6 +1,6 @@
 Computer Vision
 
-In the original Otus’s method for automatic thresholding, we seek to find a threshold t that minimizes the weighted sum of within-group variances background and foreground pixels that result from thesholding the grayscale image at value t
+In the original Otsu’s method for automatic thresholding, we seek to find a threshold t that minimizes the weighted sum of within-group variances background and foreground pixels that result from thesholding the grayscale image at value t
 with 𝐻𝐻(𝑗) the grayscale histogram, N the total number of pixels in the image, and 𝐺 the number of
 gray level values. We will extend the Otsu’s method to automatically segment an image that contains
 anywhere from two to four regions, with the background being one of the four regions. The number
