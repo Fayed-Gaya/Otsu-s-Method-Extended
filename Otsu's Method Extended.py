@@ -2,7 +2,7 @@ from PIL import Image as im
 
 
 def main():
-    hist = gray_hist("blackroll-duoball.bmp")
+    hist = gray_hist("input1.bmp")
     otsu2_result = otsu_2(hist)
     print(otsu2_result)
 
@@ -75,9 +75,10 @@ def otsu_2(hist):
         var_total = 0.0
         for gray_val in hist:
             if (gray_val <= t):
-                var_bg += ((gray_val - ave_gray_bg)**2) * weight_bg
+                var_bg += ((gray_val - ave_gray_bg)**2) * \
+                    hist[gray_val]  # implicit division by 1
             else:
-                var_fg += ((gray_val - ave_gray_fg)**2) * weight_fg
+                var_fg += ((gray_val - ave_gray_fg)**2) * hist[gray_val]
         #print(f"VBG: {var_bg}, VFG: {var_fg}")
         # calculate total variance for current threshold
         var_total = (var_fg * weight_fg) + (var_bg * weight_bg)
