@@ -4,6 +4,7 @@ from PIL import Image as im
 def main():
     hist = gray_hist("blackroll-duoball.bmp")
     otsu2_result = otsu_2(hist)
+    print(otsu2_result)
 
 
 def gray_hist(filename):
@@ -47,7 +48,7 @@ def gray_hist(filename):
 
 def otsu_2(hist):
     ################### OTSU 2 REGIONS ####################
-    # save total pixel count and set flag values for min variance
+    # set flag values for min variance
     min_var = {"var": -1, "t1": -1}
     # Test all possible thresholds
     for t in range(0, 256):
