@@ -22,9 +22,11 @@ def main():
                 pixel_map[i, j] = (int(grayscale))
                 # gray_image.save("grayscale.bmp")
 
+        # save total pixel count and set flag values for min variance
         total_pix = width * height
-        # What is this outer for loop used for? Region counting?
-        for t in range(0, 1):
+        min_var = {"var": -1, "t1": -1}
+        # Test all possible thresholds
+        for t in range(0, 255):
             # calculate weights and average gray values
             fg_total_pix = fg_total_gray = 0
             bg_total_pix = bg_total_gray = 0
@@ -38,10 +40,13 @@ def main():
                         bg_total_pix += 1
                         bg_total_gray += gray_val
 
+            # avoid division by zero
+            if (bg_total_gray == 0 or fg_total_gray == 0):
+                continue
             weight_fg = (fg_total_pix/total_pix)
-            ave_gray_fg = (fg_total_gray/total_pix)
+            ave_gray_fg = (fg_total_gray/fg_total_pix)
             weight_bg = (bg_total_pix/total_pix)
-            ave_gray_bg = (bg_total_gray/total_pix)
+            ave_gray_bg = (bg_total_gray/bg_total_pix)
 
             # calculate regional variances
             var_fg = 0.0
@@ -54,8 +59,14 @@ def main():
                         var_fg += ((gray_val - ave_gray_fg)**2)/total_pix
                     else:
                         var_bg += ((gray_val - ave_gray_bg)**2)/total_pix
-
+            # calculate total variance for current threshold
             var_total = (var_fg * weight_fg) + (var_bg * weight_bg)
+            # save min variance and threshold, -1 to set first min
+            if (var_total < min_var["var"] or min_var["var"] == -1):
+                min_var["var"] = var_total
+                min_var["t1"] = t
+
+        return min_var
 
 
 if __name__ == "__main__":
