@@ -2,12 +2,12 @@ from PIL import Image as im
 
 
 def main():
-    hist = gray_hist("blackroll-duoball.bmp")
+    hist = get_gray_hist("blackroll-duoball.bmp")
     otsu2_result = otsu_2(hist)
     print(otsu2_result)
 
 
-def gray_hist(filename):
+def get_gray_hist(filename):
     # Open input image
     with im.open(filename) as input_image:
         # Get input image size (mode, size, color)
@@ -15,7 +15,7 @@ def gray_hist(filename):
         # Create an image object of input image dimensions
         gray_image = im.new('L', (width, height))
         # Create an image access object to be able to manipulate the outptu image
-        pixel_map = gray_image.load()
+        gray_map = gray_image.load()
 
         # convert to grayscale
         for i in range(0, width):
@@ -25,14 +25,14 @@ def gray_hist(filename):
                 # Apply professor given grayscale converion formula
                 grayscale = (0.299 * r + 0.587 * g + 0.114 * b)
                 # Write to output image using pixeel_map image access object
-                pixel_map[i, j] = (int(grayscale))
+                gray_map[i, j] = (int(grayscale))
                 # gray_image.save("grayscale.bmp")
 
         # create histogram
         hist = dict()
         for i in range(0, width):
             for j in range(height):
-                gray_val = pixel_map[i, j]
+                gray_val = gray_map[i, j]
                 hist[gray_val] = hist.get(gray_val, 0) + 1
 
         # normalize histogram
