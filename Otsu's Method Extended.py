@@ -4,9 +4,11 @@ from PIL import Image as im
 def main():
     hist = get_gray_hist("blackroll-duoball.bmp")
     otsu2_result = otsu_2(hist)
-    print(otsu2_result)
+    convert_image("blackroll-duoball.bmp",
+                  "otsu_result_blackroll.bmp", otsu2_result)
 
 
+# takes image filename as input and returns histogram dict based on grayscale version of original image
 def get_gray_hist(filename):
     # Open input image
     with im.open(filename) as input_image:
@@ -45,11 +47,48 @@ def get_gray_hist(filename):
 
         return hist
 
+# converts image into visual, grayscale representation of segmented regions
 
+
+def convert_image(in_name, out_name, var_dict):
+    # Open input image
+    with im.open(in_name) as input_image:
+        # Get input image size (mode, size, color)
+        width, height = input_image.size
+        # Create an image object of input image dimensions
+        gray_image = im.new('L', (width, height))
+        # Create an image access object to be able to manipulate the outptu image
+        gray_map = gray_image.load()
+
+        # convert to grayscale
+        for i in range(0, width):
+            for j in range(height):
+                # Unpack pixel values for all pixel's in the input image
+                r, g, b = input_image.getpixel((i, j))
+                # Apply professor given grayscale converion formula
+                grayscale = (0.299 * r + 0.587 * g + 0.114 * b)
+                # Write to output image using pixeel_map image access object
+                gray_map[i, j] = (int(grayscale))
+
+        # segmentation on grayscale image 2 regions
+        if (var_dict["regions"] == 2):
+            for i in range(0, width):
+                for j in range(0, height):
+                    if (gray_map[i, j] <= var_dict["t1"]):
+                        gray_map[i, j] = 0
+                    else:
+                        gray_map[i, j] = 255
+        else:
+            return var_dict  # placeholder, eventually code out 3 and 4 region versions
+
+        gray_image.save(out_name)
+
+
+# takes histogram as input and returns dict with total minimum variance (var), threshold (t1), and number of regions (regions)
 def otsu_2(hist):
     ################### OTSU 2 REGIONS ####################
-    # set flag values for min variance
-    min_var = {"var": -1, "t1": -1}
+    # set flag values for min variance, threshold, and set region number to 2
+    min_var = {"var": -1, "t1": -1, "regions": 2}
     # Test all possible thresholds
     for t in range(0, 256):
         # calculate weights and average gray values
