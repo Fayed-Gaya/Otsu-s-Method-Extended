@@ -71,15 +71,20 @@ def convert_image(in_name, out_name, var_dict):
                 gray_map[i, j] = (int(grayscale))
 
         # segmentation on grayscale image 2 regions
-        if (var_dict["regions"] == 2):
+        num_regions = var_dict["regions"]
+        if(num_regions == 2):
             for i in range(0, width):
                 for j in range(0, height):
                     if (gray_map[i, j] <= var_dict["t1"]):
                         gray_map[i, j] = 0
                     else:
                         gray_map[i, j] = 255
+        elif(num_regions == 3):
+                return var_dict  # placeholder
+        elif(num_regions == 4):
+                return var_dict # placeholder
         else:
-            return var_dict  # placeholder, eventually code out 3 and 4 region versions
+            print("region error")
 
         gray_image.save(out_name)
 
