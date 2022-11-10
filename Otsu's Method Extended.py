@@ -1,43 +1,55 @@
 from PIL import Image as im
 
-
 def main():
+    """
+    Converts a source image to grayscale.
+    Calculates the number of regions in the source image.
+    Segments them accordingly.
+    """
+    # Could add a function to that collects the image input filename from the user?
+    # Create a histogram of grayvalues from our input image
     hist = get_gray_hist("blackroll-duoball.bmp")
+    # 
     otsu2_result = otsu_2(hist)
     convert_image("blackroll-duoball.bmp",
                   "otsu_result_blackroll.bmp", otsu2_result)
 
-
-# takes image filename as input and returns histogram dict based on grayscale version of original image
 def get_gray_hist(filename):
+    """
+    Returns a dictionary containing a histogram of the normalized gray level values of an input image.
+    
+    :param filname: The name of the image input file
+    """
+
     # Open input image
     with im.open(filename) as input_image:
-        # Get input image size (mode, size, color)
+        # Unpack input image size tuple
         width, height = input_image.size
-        # Create an image object of input image dimensions
+        # Create the output image in black and white mode using the size collected from the input image
         gray_image = im.new('L', (width, height))
-        # Create an image access object to be able to manipulate the outptu image
+        # Why do we call load()? Is it because it returns an image access object which is the only way to to write to an image object?
         gray_map = gray_image.load()
 
-        # convert to grayscale
+        # Iterate through every pixel and convert it to grayscale
         for i in range(0, width):
             for j in range(height):
-                # Unpack pixel values for all pixel's in the input image
+                # Unpack the pixel value using the x and y coordinates of the pixel. Returns a tuple containing the red, green, and blue values of the pixel
                 r, g, b = input_image.getpixel((i, j))
-                # Apply professor given grayscale converion formula
+                # Calculate the grayscale value of the pixel using the formula given by the professor
                 grayscale = (0.299 * r + 0.587 * g + 0.114 * b)
-                # Write to output image using pixeel_map image access object
+                # Write the grayscale value to output image through the image access object
                 gray_map[i, j] = (int(grayscale))
                 # gray_image.save("grayscale.bmp")
 
-        # create histogram
+        # We create a histogram of gray level values as a dictionary to improve the performance of Otsu's algorithm implementation
         hist = dict()
+        # Iteratre through every pixel in our grayscale image and insert it in our dictionary
         for i in range(0, width):
             for j in range(height):
                 gray_val = gray_map[i, j]
                 hist[gray_val] = hist.get(gray_val, 0) + 1
 
-        # normalize histogram
+        # We then normalize the historgram to ?
         total_pix = 0
         for gray_val in hist:
             total_pix += hist[gray_val]
@@ -46,92 +58,112 @@ def get_gray_hist(filename):
             hist[gray_val] = hist[gray_val]/total_pix
 
         return hist
-
-# converts image into visual, grayscale representation of segmented regions
-
-
-def convert_image(in_name, out_name, var_dict):
-    # Open input image
-    with im.open(in_name) as input_image:
-        # Get input image size (mode, size, color)
-        width, height = input_image.size
-        # Create an image object of input image dimensions
-        gray_image = im.new('L', (width, height))
-        # Create an image access object to be able to manipulate the outptu image
-        gray_map = gray_image.load()
-
-        # convert to grayscale
-        for i in range(0, width):
-            for j in range(height):
-                # Unpack pixel values for all pixel's in the input image
-                r, g, b = input_image.getpixel((i, j))
-                # Apply professor given grayscale converion formula
-                grayscale = (0.299 * r + 0.587 * g + 0.114 * b)
-                # Write to output image using pixeel_map image access object
-                gray_map[i, j] = (int(grayscale))
-
-        # segmentation on grayscale image 2 regions
-        num_regions = var_dict["regions"]
-        if(num_regions == 2):
-            for i in range(0, width):
-                for j in range(0, height):
-                    if (gray_map[i, j] <= var_dict["t1"]):
-                        gray_map[i, j] = 0
-                    else:
-                        gray_map[i, j] = 255
-        elif(num_regions == 3):
-                return var_dict  # placeholder
-        elif(num_regions == 4):
-                return var_dict # placeholder
-        else:
-            print("region error")
-
-        gray_image.save(out_name)
-
-
-# takes histogram as input and returns dict with total minimum variance (var), threshold (t1), and number of regions (regions)
 def otsu_2(hist):
-    ################### OTSU 2 REGIONS ####################
-    # set flag values for min variance, threshold, and set region number to 2
+    """
+    Returns the total minimum variance, threshold determined using Otsu's algorithm for 2 regions, and number of regions (2).
+
+    :param hist: A normalized histogram of gray level values derived from an input image.
+    """
+
+    # Initialize the return dictionary with an inital variance, threshold, and region count of 2 (region count does not change)
     min_var = {"var": -1, "t1": -1, "regions": 2}
-    # Test all possible thresholds
+    # Test all possible gray level values (0 - 255) as threshholds
     for t in range(0, 256):
-        # calculate weights and average gray values
+        # Initialize background and foreground weights and pixel counts
         weight_bg = weight_fg = 0
         bg_total_gray = fg_total_gray = 0
+        # Calculate the number of pixels and the weight of the respective foreground and background regions
         for gray_val in hist:
+            # Background calculations
             if (gray_val <= t):
                 weight_bg += hist[gray_val]
                 bg_total_gray += (gray_val * hist[gray_val])
+            # Forground calculations
             else:
                 weight_fg += hist[gray_val]
                 fg_total_gray += (gray_val * hist[gray_val])
 
-        # avoid division by zero
+        # Avoid the division be zero error (could replace this with a try and except clause?)
         if (weight_bg == 0 or weight_fg == 0):
             continue
         ave_gray_bg = (bg_total_gray/weight_bg)
         ave_gray_fg = (fg_total_gray/weight_fg)
 
-        # calculate regional variances
+        # Initialize the region and total variances to 0.0
         var_fg = 0.0
         var_bg = 0.0
         var_total = 0.0
+
+        # Calculate the regional variances
         for gray_val in hist:
+            # Sum the background variance by taking the square of the difference between the average gray value of the region and each gray value in the histogram
+            # multiplied by the number of pixels of that grayvalue
             if (gray_val <= t):
                 var_bg += ((gray_val - ave_gray_bg)**2) * hist[gray_val]
+            # Repeate the above for foreground
             else:
                 var_fg += ((gray_val - ave_gray_fg)**2) * hist[gray_val]
-        #print(f"VBG: {var_bg}, VFG: {var_fg}")
-        # calculate total variance for current threshold
+        # Multiply the regional variances by their respective weights and then sum them to get the total variance 
         var_total = (var_fg * weight_fg) + (var_bg * weight_bg)
-        # save min variance and threshold, -1 to set first min
+        # Identify the minimum total variance generated from across all thresholds and collect that variances corresponding variance value and threshold
         if (var_total < min_var["var"] or min_var["var"] == -1):
             min_var["var"] = var_total
             min_var["t1"] = t
 
     return min_var
+def convert_image(in_name, out_name, var_dict):
+    """
+    Converts the input image into grayscale based on the threshold calculated by Otsu's method of automatic thresholding.
 
+    :param in_name: The filename of the input image
+    :param out_name: The filename of the output image
+    :param var_dict: A dictionary containing the calculate minimum variance, the threshold value, and the number of regions
+    """
+
+    # Open the input image
+    with im.open(in_name) as input_image:
+        # Get input image size (mode, size, color)
+        width, height = input_image.size
+        # Create the output image object in black and white mode using the collected input image dimensions
+        gray_image = im.new('L', (width, height))
+        # Create an image access object to be able write to the output image object
+        gray_map = gray_image.load()
+
+        # Iterate through every pixel and convert it to grayscale
+        for i in range(0, width):
+            for j in range(height):
+                # Unpack the pixel value using the x and y coordinates of the pixel. Returns a tuple containing the red, green, and blue values of the pixel
+                r, g, b = input_image.getpixel((i, j))
+                # Calculate the grayscale value of the pixel using the formula given by the professor
+                grayscale = (0.299 * r + 0.587 * g + 0.114 * b)
+                # Write the grayscale value to output image through the image access object
+                gray_map[i, j] = (int(grayscale))
+
+        # Identify the number of regions in the image
+        num_regions = var_dict["regions"]
+        # Segment a two region image
+        if(num_regions == 2):
+            # Assign the pixel a binary value respective to its region determined using the threshold from the dictionary paramter
+            for i in range(0, width):
+                for j in range(0, height):
+                    # Turn background pixels black
+                    if (gray_map[i, j] <= var_dict["t1"]):
+                        gray_map[i, j] = 0
+                    # Turn foreground pixels white
+                    else:
+                        gray_map[i, j] = 255
+        # Segment a three region image
+        elif(num_regions == 3):
+                return var_dict  # placeholder
+        # Segment a four region image
+        elif(num_regions == 4):
+                return var_dict # placeholder
+        # Convert the structure into a try and except clause?
+        else:
+            print("region error")
+
+        # Save the output image
+        gray_image.save(out_name)
 
 if __name__ == "__main__":
     main()
