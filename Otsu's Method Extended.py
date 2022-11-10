@@ -28,7 +28,6 @@ def get_gray_hist(filename):
                 grayscale = (0.299 * r + 0.587 * g + 0.114 * b)
                 # Write to output image using pixeel_map image access object
                 gray_map[i, j] = (int(grayscale))
-                # gray_image.save("grayscale.bmp")
 
         # create histogram
         hist = dict()
