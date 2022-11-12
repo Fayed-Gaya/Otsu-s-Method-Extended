@@ -1,5 +1,8 @@
 from PIL import Image as im
 
+INPUT_IMAGE_PATH = "Input_Images/"
+OUTPUT_IMAGE_PATH = "Output_Images/"
+
 
 def main():
     """
@@ -14,19 +17,23 @@ def main():
     input_filename = get_input_filename()
 
     # Generate the output filename
-    output_filename = input_filename[:-4] + "-out.bmp"
+    output_file = OUTPUT_IMAGE_PATH + input_filename[:-4] + "-out.bmp"
 
     # Create a normalized histogram of gray values from input image
-    histogram = get_gray_hist(input_filename)
+    histogram = get_gray_hist(INPUT_IMAGE_PATH + input_filename)
 
     # Segment the region into two images using Otsu's method for automatic thresholding for two regions
     otsu2_result = otsu_2(histogram)
 
     # Create and save an output image of marked regions using Otsu's method for automatic thresholding for two regions
-    convert_image(input_filename, output_filename, otsu2_result)
+    convert_image(INPUT_IMAGE_PATH + input_filename, output_file, otsu2_result)
 
 
 def get_input_filename():
+    """
+    Collects an input image filename from the user.
+    """
+
     filename = ""
     while not filename:
         try:
