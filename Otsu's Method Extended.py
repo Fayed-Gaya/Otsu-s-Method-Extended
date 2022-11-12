@@ -3,17 +3,37 @@ from PIL import Image as im
 
 def main():
     """
-    Converts a source image to grayscale.
+    Collects an input image filename from the user.
+    Converts the source image to grayscale.
     Calculates the number of regions in the source image.
     Segments them accordingly.
+    Outputs the segmented image.
     """
-    # Could add a function to that collects the image input filename from the user?
-    # Create a normalized histogram of grayvalues from our input image
-    hist = get_gray_hist("blackroll-duoball.bmp")
+
+    # Collect input filename from user
+    input_filename = get_input_filename()
+
+    # Generate the output filename
+    output_filename = input_filename[:-4] + "-out.bmp"
+
+    # Create a normalized histogram of gray values from input image
+    histogram = get_gray_hist(input_filename)
+
     # Segment the region into two images using Otsu's method for automatic thresholding for two regions
-    otsu2_result = otsu_2(hist)
-    # Create and save an output image of marked regions using Otsu's method for automatic thresholding for two regions 
-    convert_image("blackroll-duoball.bmp", "otsu_result_blackroll.bmp", otsu2_result)
+    otsu2_result = otsu_2(histogram)
+
+    # Create and save an output image of marked regions using Otsu's method for automatic thresholding for two regions
+    convert_image(input_filename, output_filename, otsu2_result)
+
+
+def get_input_filename():
+    filename = ""
+    while not filename:
+        try:
+            filename = input("Enter the name of the input image file: ")
+        except:
+            print("Filename entered incorrectly.")
+    return filename
 
 
 def get_gray_hist(filename):
