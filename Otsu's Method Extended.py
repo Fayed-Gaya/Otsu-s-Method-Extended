@@ -109,11 +109,12 @@ def otsu_2(hist):
                 weight_fg += hist[gray_val]
                 fg_total_gray += gray_val * hist[gray_val]
 
-        # Avoid the division be zero error (could replace this with a try and except clause?)
-        if weight_bg == 0 or weight_fg == 0:
+        # Catch ZeroDivsionErrors resulting from 0 weights
+        try:
+            ave_gray_bg = bg_total_gray / weight_bg
+            ave_gray_fg = fg_total_gray / weight_fg
+        except ZeroDivisionError:
             continue
-        ave_gray_bg = bg_total_gray / weight_bg
-        ave_gray_fg = fg_total_gray / weight_fg
 
         # Initialize the region and total variances to 0.0
         var_fg = 0.0
