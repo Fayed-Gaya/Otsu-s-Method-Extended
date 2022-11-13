@@ -50,6 +50,9 @@ def get_gray_hist(filename):
     :param filname: The name of the image input file
     """
 
+    # We create a histogram of gray level values as a dictionary to improve the performance of Otsu's algorithm implementation
+    hist = dict()
+
     # Open input image
     with im.open(filename) as input_image:
         # Unpack input image size tuple
@@ -65,24 +68,16 @@ def get_gray_hist(filename):
                 # Unpack the pixel value using the x and y coordinates of the pixel. Returns a tuple containing the red, green, and blue values of the pixel
                 r, g, b = input_image.getpixel((i, j))
                 # Calculate the grayscale value of the pixel using the formula given by the professor
-                grayscale = 0.299 * r + 0.587 * g + 0.114 * b
-                # Write the grayscale value to output image through the image access object
-                gray_map[i, j] = int(grayscale)
-                # gray_image.save("grayscale.bmp")
+                grayscale_value = 0.299 * r + 0.587 * g + 0.114 * b
+                # Add the grayscale value to our histogram
+                hist[grayscale_value] = hist.get(grayscale_value, 0) + 1
 
-        # We create a histogram of gray level values as a dictionary to improve the performance of Otsu's algorithm implementation
-        hist = dict()
-        # Iteratre through every pixel in our grayscale image and insert it in our dictionary
-        for i in range(0, width):
-            for j in range(height):
-                gray_val = gray_map[i, j]
-                hist[gray_val] = hist.get(gray_val, 0) + 1
-
-        # We then normalize the historgram to ?
+        # Count the total number of pizels in our image
         total_pix = 0
-        for gray_val in hist:
-            total_pix += hist[gray_val]
+        for value in list(hist.values()):
+            total_pix += value
 
+        # Noirmalize the histogram to improve convenience
         for gray_val in hist:
             hist[gray_val] = hist[gray_val] / total_pix
 
