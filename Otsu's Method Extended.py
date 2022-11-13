@@ -32,6 +32,8 @@ def main():
     # Create and save an output image of marked regions using Otsu's method for automatic thresholding for two regions
     convert_image(INPUT_IMAGE_PATH + input_filename, output_file, otsu4_result)
 
+    #return correct result
+
 
 def get_input_filename():
     """
@@ -145,7 +147,7 @@ def otsu_2(hist):
 
 def otsu_4(hist):
     """
-    Returns the total minimum variance, threshold determined using Otsu's algorithm adapted for 4 regions, and number of regions (3).
+    Returns the total minimum variance, threshold determined using Otsu's algorithm adapted for 4 regions, and number of regions (4).
     :param hist: A normalized histogram of gray level values derived from an input image.
     """
 
