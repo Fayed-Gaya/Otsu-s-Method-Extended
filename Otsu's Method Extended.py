@@ -14,8 +14,7 @@ def main():
     """
 
     # Collect input filename from user
-    #input_filename = get_input_filename()
-    input_filename = "tiger1.bmp"
+    input_filename = get_input_filename()
 
     # Generate the output filename
     output_file = OUTPUT_IMAGE_PATH + input_filename[:-4] + "-out.bmp"
@@ -24,15 +23,36 @@ def main():
     histogram = get_gray_hist(INPUT_IMAGE_PATH + input_filename)
 
     # Segment the region into two images using Otsu's method for automatic thresholding for two regions
-    #otsu2_result = otsu_2(histogram)
+    otsu2_result = otsu_2(histogram)
+
+    # Segment the region into two images using Otsu's method for automatic thresholding for two regions
+    otsu3_result = otsu_3(histogram)
+
     # Segment the region into two images using Otsu's method for automatic thresholding for four regions
     otsu4_result = otsu_4(histogram)
 
-
     # Create and save an output image of marked regions using Otsu's method for automatic thresholding for two regions
-    convert_image(INPUT_IMAGE_PATH + input_filename, output_file, otsu4_result)
+    convert_image(
+        INPUT_IMAGE_PATH + input_filename,
+        output_file,
+        region_selector(otsu2_result, otsu3_result, otsu4_result),
+    )
 
-    #return correct result
+
+def region_selector(*args):
+    """
+    Return histogram information with the lowest variance.
+    : param args: The histograms produced by the different versions of Otsu's extended algorithm.
+    """
+
+    lowest_variance = float("inf")
+    res = {}
+    for segmentation_scan in args:
+        lowest_variance = min(lowest_variance, segmentation_scan["var"])
+        if segmentation_scan["var"] == lowest_variance:
+            res = segmentation_scan
+
+    return res
 
 
 def get_input_filename():
@@ -62,11 +82,6 @@ def get_gray_hist(filename):
     with im.open(filename) as input_image:
         # Unpack input image size tuple
         width, height = input_image.size
-        # Create the output image in black and white mode using the size collected from the input image
-        gray_image = im.new("L", (width, height))
-        # Why do we call load()? Is it because it returns an image access object which is the only way to to write to an image object?
-        gray_map = gray_image.load()
-
         # Iterate through every pixel and convert it to grayscale
         for i in range(0, width):
             for j in range(height):
@@ -120,7 +135,6 @@ def otsu_2(hist):
             ave_gray_fg = fg_total_gray / weight_fg
         except ZeroDivisionError:
             continue
-        
 
         # Initialize the region and total variances to 0.0
         var_fg = 0.0
@@ -145,6 +159,71 @@ def otsu_2(hist):
 
     return min_var
 
+
+def otsu_3(hist):
+    """
+    Returns the total minimum variance, threshold determined using Otsu's algorithm adapted for 3 regions, and number of regions (3).
+    :param hist: A normalized histogram of gray level values derived from an input image.
+    """
+
+    # Initialize the return dictionary with an inital variance, 2 thresholds, and a region count of 3 (region count does not change)
+    min_var = {"var": -1, "t1": -1, "t2": -1, "regions": 3}
+    # Test all possible gray level values (0 - 255)^2 as threshholds
+    for t1 in range(0, 256):
+        print(f"Otsu 3 Round: {t1}")
+        for t2 in range(t1 + 1, 256):
+            # Initialize background and foreground weights and pixel counts
+            weight_a = weight_b = weight_c = 0
+            a_total_gray = b_total_gray = c_total_gray = 0
+            # Calculate the number of pixels and the weight of the respective foreground and background regions
+            for gray_val in hist:
+                # A region calculations, note implicit ranges from order of if statements
+                if gray_val <= t1:
+                    weight_a += hist[gray_val]
+                    a_total_gray += gray_val * hist[gray_val]
+                # B region calculations, implicit gray_val >= t1
+                elif gray_val <= t2:
+                    weight_b += hist[gray_val]
+                    b_total_gray += gray_val * hist[gray_val]
+                #
+                else:
+                    weight_c += hist[gray_val]
+                    c_total_gray += gray_val * hist[gray_val]
+
+            # Catch ZeroDivsionErrors resulting from 0 weights
+            try:
+                ave_gray_a = a_total_gray / weight_a
+                ave_gray_b = b_total_gray / weight_b
+                ave_gray_c = c_total_gray / weight_c
+            except ZeroDivisionError:
+                continue
+
+            # Initialize the region and total variances to 0.0
+            var_a = var_b = var_c = 0.0
+            var_total = 0.0
+
+            # Calculate the regional variances
+            for gray_val in hist:
+                # Sum the background variance by taking the square of the difference between the average gray value of the region and each gray value in the histogram
+                # multiplied by the number of pixels of that grayvalue
+                if gray_val <= t1:
+                    var_a += ((gray_val - ave_gray_a) ** 2) * hist[gray_val]
+                # Repeate the above for b and c
+                elif gray_val <= t2:
+                    var_b += ((gray_val - ave_gray_b) ** 2) * hist[gray_val]
+                else:
+                    var_c += ((gray_val - ave_gray_c) ** 2) * hist[gray_val]
+            # Multiply the regional variances by their respective weights and then sum them to get the total variance
+            var_total = (var_a * weight_a) + (var_b * weight_b) + (var_c * weight_c)
+            # Identify the minimum total variance generated from across all thresholds and collect that variances corresponding variance value and threshold
+            if var_total < min_var["var"] or min_var["var"] == -1:
+                min_var["var"] = var_total
+                min_var["t1"] = t1
+                min_var["t2"] = t2
+
+    return min_var
+
+
 def otsu_4(hist):
     """
     Returns the total minimum variance, threshold determined using Otsu's algorithm adapted for 4 regions, and number of regions (4).
@@ -152,10 +231,10 @@ def otsu_4(hist):
     """
 
     # Initialize the return dictionary with an inital variance, 3 thresholds, and region count of 4 (region count does not change)
-    min_var = {"var": -1, "t1": -1, "t2" :-1, "t3": -1, "regions": 4}
+    min_var = {"var": -1, "t1": -1, "t2": -1, "t3": -1, "regions": 4}
     # Test all possible gray level values (0 - 255)^3 as threshholds
     for t1 in range(0, 256):
-        print(f"round {t1}")
+        print(f"Otsu 4 Round: {t1}")
         for t2 in range(t1 + 1, 256):
             for t3 in range(t2 + 1, 256):
                 # Initialize background and foreground weights and pixel counts
@@ -168,11 +247,11 @@ def otsu_4(hist):
                         weight_a += hist[gray_val]
                         a_total_gray += gray_val * hist[gray_val]
                     # B region calculations, implicit gray_val > t1
-                    elif(gray_val <= t2):
+                    elif gray_val <= t2:
                         weight_b += hist[gray_val]
                         b_total_gray += gray_val * hist[gray_val]
                     # C region calculations, implicit gray_val > t2
-                    elif(gray_val <= t3):
+                    elif gray_val <= t3:
                         gray_val <= t1
                         weight_c += hist[gray_val]
                         c_total_gray += gray_val * hist[gray_val]
@@ -188,7 +267,6 @@ def otsu_4(hist):
                     ave_gray_d = d_total_gray / weight_d
                 except ZeroDivisionError:
                     continue
-                
 
                 # Initialize the region and total variances to 0.0
                 var_a = var_b = var_c = var_d = 0.0
@@ -208,7 +286,12 @@ def otsu_4(hist):
                     else:
                         var_d += ((gray_val - ave_gray_d) ** 2) * hist[gray_val]
                 # Multiply the regional variances by their respective weights and then sum them to get the total variance
-                var_total = (var_a * weight_a) + (var_b * weight_b) + (var_c * weight_c) + (var_d * weight_d)
+                var_total = (
+                    (var_a * weight_a)
+                    + (var_b * weight_b)
+                    + (var_c * weight_c)
+                    + (var_d * weight_d)
+                )
                 # Identify the minimum total variance generated from across all thresholds and collect that variances corresponding variance value and threshold
                 if var_total < min_var["var"] or min_var["var"] == -1:
                     min_var["var"] = var_total
