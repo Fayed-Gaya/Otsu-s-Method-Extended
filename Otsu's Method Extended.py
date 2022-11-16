@@ -15,7 +15,7 @@ def main():
 
     # Collect input filename from user
     #input_filename = get_input_filename()
-    input_filename = "basket_balls.bmp"
+    input_filename = "data13.bmp"
 
     # Generate the output filename
     output_file = OUTPUT_IMAGE_PATH + input_filename[:-4] + "-out.bmp"
@@ -28,9 +28,9 @@ def main():
 
     # Segment the region into two images using Otsu's method for automatic thresholding for two regions
     otsu3_result = otsu_3(histogram)
+
     # Segment the region into two images using Otsu's method for automatic thresholding for four regions
     otsu4_result = otsu_4(histogram)
-
 
     # Create and save an output image of marked regions, region_selector decides minimum variance with handcrafted thresholds
     convert_image(
@@ -43,7 +43,7 @@ def main():
 
 def region_selector(otsu2, otsu3, otsu4):
     """
-    Return histogram information with the lowest variance.
+    Return histogram information with the lowest variance with handcrafted thresholds.
     : param args: The histograms produced by the different versions of Otsu's extended algorithm.
     """
     
@@ -65,6 +65,7 @@ def get_input_filename():
             filename = input("Enter the name of the input image file: ")
         except:
             print("Filename entered incorrectly.")
+
     return filename
 
 
@@ -88,7 +89,7 @@ def get_gray_hist(filename):
                 r, g, b = input_image.getpixel((i, j))
                 # Calculate the grayscale value of the pixel using the formula given by the professor
                 grayscale_value = 0.299 * r + 0.587 * g + 0.114 * b
-                # Add the grayscale value to our histogram
+                # Cast grayscale value to int and add to our histogram
                 grayscale_value = int(grayscale_value)
                 hist[grayscale_value] = hist.get(grayscale_value, 0) + 1
 
@@ -311,10 +312,8 @@ def convert_image(in_name, out_name, var_dict):
     with im.open(in_name) as input_image:
         # Get input image size (mode, size, color)
         width, height = input_image.size
-        # Create the output image object in black and white mode using the collected input image dimensions
-        gray_image = im.new("RGB", (width, height))
         # Create an image access object to be able write to the output image object
-        gray_map = gray_image.load()
+        image_map = input_image.load()
 
         # Iterate through every pixel and convert it to grayscale
         for i in range(0, width):
@@ -323,8 +322,8 @@ def convert_image(in_name, out_name, var_dict):
                 r, g, b = input_image.getpixel((i, j))
                 # Calculate the grayscale value of the pixel using the formula given by the professor
                 grayscale = 0.299 * r + 0.587 * g + 0.114 * b
-                # Write the grayscale value to output image through the image access object
-                gray_map[i, j] = (int(grayscale), int(grayscale), int(grayscale))
+                # Write the grayscale value to local input image through the image access object
+                image_map[i, j] = (int(grayscale), int(grayscale), int(grayscale))
 
         # Identify the number of regions in the image
         num_regions = var_dict["regions"]
@@ -334,40 +333,39 @@ def convert_image(in_name, out_name, var_dict):
             for i in range(0, width):
                 for j in range(0, height):
                     # Turn background pixels black
-                    if gray_map[i, j][0] <= var_dict["t1"]:
-                        gray_map[i, j] = (0, 0, 0)
+                    if image_map[i, j][0] <= var_dict["t1"]:
+                        image_map[i, j] = (0, 0, 0)
                     # Turn foreground pixels white
                     else:
-                        gray_map[i, j] = (255, 255, 255)
+                        image_map[i, j] = (255, 255, 255)
         # Segment a three region image
         elif num_regions == 3:
             for i in range(0, width):
                 for j in range(0, height):
-                    if gray_map[i, j][0] <= var_dict["t1"]:
-                        gray_map[i, j] = (255, 0, 0)
-                    elif gray_map[i, j][0] <= var_dict["t2"]:
-                        gray_map[i, j] = (0, 255, 0)
+                    if image_map[i, j][0] <= var_dict["t1"]:
+                        image_map[i, j] = (255, 0, 0)
+                    elif image_map[i, j][0] <= var_dict["t2"]:
+                        image_map[i, j] = (0, 255, 0)
                     else:
-                        gray_map[i, j] = (0, 0, 255)
+                        image_map[i, j] = (0, 0, 255)
         # Segment a four region image
         elif num_regions == 4:
             for i in range(0, width):
                 for j in range(0, height):
-                    if gray_map[i, j][0] <= var_dict["t1"]:
-                        gray_map[i, j] = (0, 0, 0)
-                    elif gray_map[i, j][0] <= var_dict["t2"]:
-                        gray_map[i, j] = (255, 0, 0)
-                    elif gray_map[i, j][0] <= var_dict["t3"]:
-                        gray_map[i, j] = (0, 255, 0)
-                    # Turn foreground pixels white
+                    if image_map[i, j][0] <= var_dict["t1"]:
+                        image_map[i, j] = (0, 0, 0)
+                    elif image_map[i, j][0] <= var_dict["t2"]:
+                        image_map[i, j] = (255, 0, 0)
+                    elif image_map[i, j][0] <= var_dict["t3"]:
+                        image_map[i, j] = (0, 255, 0)
                     else:
-                        gray_map[i, j] = (0, 0, 255)
+                        image_map[i, j] = (0, 0, 255)
         # Convert the structure into a try and except clause?
         else:
             print("region error")
 
         # Save the output image
-        gray_image.save(out_name)
+        input_image.save(out_name)
 
 
 if __name__ == "__main__":
