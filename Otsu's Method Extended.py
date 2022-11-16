@@ -14,8 +14,7 @@ def main():
     """
 
     # Collect input filename from user
-    #input_filename = get_input_filename()
-    input_filename = "data13.bmp"
+    input_filename = get_input_filename()
 
     # Generate the output filename
     output_file = OUTPUT_IMAGE_PATH + input_filename[:-4] + "-out.bmp"
@@ -312,7 +311,7 @@ def convert_image(in_name, out_name, var_dict):
     with im.open(in_name) as input_image:
         # Get input image size (mode, size, color)
         width, height = input_image.size
-        # Create an image access object to be able write to the output image object
+        # Create an image access object to be able write to the image object
         image_map = input_image.load()
 
         # Iterate through every pixel and convert it to grayscale
@@ -329,7 +328,7 @@ def convert_image(in_name, out_name, var_dict):
         num_regions = var_dict["regions"]
         # Segment a two region image
         if num_regions == 2:
-            # Assign the pixel a binary value respective to its region determined using the threshold from the dictionary paramter
+            # Assign the pixel an RGB value respective to its region determined using the threshold from the dictionary parameter
             for i in range(0, width):
                 for j in range(0, height):
                     # Turn background pixels black
