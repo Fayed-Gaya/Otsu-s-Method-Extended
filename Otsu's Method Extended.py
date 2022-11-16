@@ -14,7 +14,8 @@ def main():
     """
 
     # Collect input filename from user
-    input_filename = get_input_filename()
+    #input_filename = get_input_filename()
+    input_filename = "basket_balls.bmp"
 
     # Generate the output filename
     output_file = OUTPUT_IMAGE_PATH + input_filename[:-4] + "-out.bmp"
@@ -27,32 +28,30 @@ def main():
 
     # Segment the region into two images using Otsu's method for automatic thresholding for two regions
     otsu3_result = otsu_3(histogram)
-
     # Segment the region into two images using Otsu's method for automatic thresholding for four regions
     otsu4_result = otsu_4(histogram)
 
-    # Create and save an output image of marked regions using Otsu's method for automatic thresholding for two regions
+
+    # Create and save an output image of marked regions, region_selector decides minimum variance with handcrafted thresholds
     convert_image(
         INPUT_IMAGE_PATH + input_filename,
         output_file,
         region_selector(otsu2_result, otsu3_result, otsu4_result),
     )
+    
 
 
-def region_selector(*args):
+def region_selector(otsu2, otsu3, otsu4):
     """
     Return histogram information with the lowest variance.
     : param args: The histograms produced by the different versions of Otsu's extended algorithm.
     """
-
-    lowest_variance = float("inf")
-    res = {}
-    for segmentation_scan in args:
-        lowest_variance = min(lowest_variance, segmentation_scan["var"])
-        if segmentation_scan["var"] == lowest_variance:
-            res = segmentation_scan
-
-    return res
+    
+    if(otsu2["var"] < 120):
+        return otsu2
+    else:
+        return otsu3 if otsu3["var"] < (otsu4["var"] + 20) else otsu4
+        
 
 
 def get_input_filename():
@@ -170,7 +169,6 @@ def otsu_3(hist):
     min_var = {"var": -1, "t1": -1, "t2": -1, "regions": 3}
     # Test all possible gray level values (0 - 255)^2 as threshholds
     for t1 in range(0, 256):
-        print(f"Otsu 3 Round: {t1}")
         for t2 in range(t1 + 1, 256):
             # Initialize background and foreground weights and pixel counts
             weight_a = weight_b = weight_c = 0
@@ -234,7 +232,6 @@ def otsu_4(hist):
     min_var = {"var": -1, "t1": -1, "t2": -1, "t3": -1, "regions": 4}
     # Test all possible gray level values (0 - 255)^3 as threshholds
     for t1 in range(0, 256):
-        print(f"Otsu 4 Round: {t1}")
         for t2 in range(t1 + 1, 256):
             for t3 in range(t2 + 1, 256):
                 # Initialize background and foreground weights and pixel counts
@@ -344,7 +341,14 @@ def convert_image(in_name, out_name, var_dict):
                         gray_map[i, j] = (255, 255, 255)
         # Segment a three region image
         elif num_regions == 3:
-            ...
+            for i in range(0, width):
+                for j in range(0, height):
+                    if gray_map[i, j][0] <= var_dict["t1"]:
+                        gray_map[i, j] = (255, 0, 0)
+                    elif gray_map[i, j][0] <= var_dict["t2"]:
+                        gray_map[i, j] = (0, 255, 0)
+                    else:
+                        gray_map[i, j] = (0, 0, 255)
         # Segment a four region image
         elif num_regions == 4:
             for i in range(0, width):
