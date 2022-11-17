@@ -31,12 +31,16 @@ def main():
     # Segment the region into two images using Otsu's method for automatic thresholding for four regions
     otsu4_result = otsu_4(histogram)
 
+    result = region_selector(otsu2_result, otsu3_result, otsu4_result)
+
     # Create and save an output image of marked regions, region_selector decides minimum variance with handcrafted thresholds
     convert_image(
         INPUT_IMAGE_PATH + input_filename,
         output_file,
-        region_selector(otsu2_result, otsu3_result, otsu4_result),
+        result,
     )
+
+    print(result)
     
 
 
