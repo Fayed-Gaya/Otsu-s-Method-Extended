@@ -41,7 +41,6 @@ def main():
     )
 
     print(result)
-    
 
 
 def region_selector(otsu2, otsu3, otsu4):
@@ -49,12 +48,11 @@ def region_selector(otsu2, otsu3, otsu4):
     Return histogram information with the lowest variance with handcrafted thresholds.
     : param args: The histograms produced by the different versions of Otsu's extended algorithm.
     """
-    
-    if(otsu2["var"] < 120):
+
+    if otsu2["var"] < 120:
         return otsu2
     else:
         return otsu3 if otsu3["var"] < (otsu4["var"] + 20) else otsu4
-        
 
 
 def get_input_filename():
